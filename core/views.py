@@ -8,6 +8,7 @@ from .models import CustomUser, Report
 from .forms import RegistrationForm
 from .backends import generate_dummy_report
 from .utils import send_email_with_link
+from django.contrib import messages
 
 
 def register(request):
@@ -27,11 +28,15 @@ def register(request):
                     reverse("custom_password_reset", args=[user.id])
                 )
                 send_email_with_link(user.email, reset_link)
-
+                
+                #Add success message
+                messages.success(request, "Registration successful! Please check your email to set your password.")
                 # Render confirmation page
                 return render(request, "check_email.html")
             except Exception as e:
-                # Log the error (optional) and show an error message
+
+                # Log the error and show an error message
+                messages.error(request, "An error occurred during registration. Please try again.")
                 print(f"Error during registration: {e}")
                 return render(request, "register.html", {"form": form, "error": "An error occurred. Please try again."})
     else:

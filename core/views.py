@@ -3,39 +3,42 @@ from django.urls import reverse
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import get_object_or_404
-from django.core.mail import send_mail
 from django.conf import settings
 from .models import CustomUser, Report
 from .forms import RegistrationForm
 from .backends import generate_dummy_report
+from .utils import send_email_with_link
+from django.contrib import messages
 
 
 def register(request):
     if request.method == "POST":
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            user = CustomUser.objects.create_user(
-                email=form.cleaned_data["email"],
-                password=form.cleaned_data["password"],
-            )
-            user.is_active = False  # Mark user as inactive until password reset
-            user.save()
+            try:
+                # Create a new user
+                user = CustomUser.objects.create_user(
+                    email=form.cleaned_data["email"],
+                )
+                user.is_active = False  # Mark user as inactive
+                user.save()
 
-            # Generate password reset link
-            reset_link = request.build_absolute_uri(
-                reverse("custom_password_reset", args=[user.id])
-            )
+                # Generate and send reset link
+                reset_link = request.build_absolute_uri(
+                    reverse("custom_password_reset", args=[user.id])
+                )
+                send_email_with_link(user.email, reset_link)
+                
+                #Add success message
+                messages.success(request, "Registration successful! Please check your email to set your password.")
+                # Render confirmation page
+                return render(request, "check_email.html")
+            except Exception as e:
 
-            # Send reset email
-            send_mail(
-                "Set Your Password",
-                f"Click the link to set your password: {reset_link}",
-                settings.EMAIL_HOST_USER,
-                [user.email],
-                fail_silently=False,
-            )
-            # Render confirmation page
-            return render(request, "check_email.html")
+                # Log the error and show an error message
+                messages.error(request, "An error occurred during registration. Please try again.")
+                print(f"Error during registration: {e}")
+                return render(request, "register.html", {"form": form, "error": "An error occurred. Please try again."})
     else:
         form = RegistrationForm()
     return render(request, "register.html", {"form": form})

@@ -47,16 +47,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'auth_project.wsgi.application'
 
+# Attempt to configure PostgreSQL; fallback to SQLite if not available
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'test1',
-        'USER': 'postgres',
-        'PASSWORD': 'admin',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': {}
 }
+
+# Check for PostgreSQL configuration environment variables
+if os.environ.get("USE_POSTGRES", "False").lower() == "true":
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('POSTGRES_DB', 'test1'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'admin'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+    }
+else:
+    # Default to SQLite if PostgreSQL isn't configured: this is for testing env only
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
 
 AUTH_USER_MODEL = 'core.CustomUser'
 

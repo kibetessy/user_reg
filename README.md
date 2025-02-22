@@ -1,4 +1,8 @@
 # django-auth-example
+This project enables the user to register with their email and a passwor. Once registered they get an email to 
+change their password and come back log in and taken to landing page.
+
+HAPPY CODING!!....
 
 ## Setup Instructions
 
